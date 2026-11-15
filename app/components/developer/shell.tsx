@@ -54,7 +54,7 @@ function QuickTools() {
         <Button
           size="icon-sm"
           variant="outline"
-          aria-label={text("Tải lại", "Reload")}
+          aria-label={text("Đồng bộ GitHub", "Sync GitHub")}
           disabled={isValidating}
           onClick={reload}
         >

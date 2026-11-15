@@ -346,12 +346,6 @@ async function syncStep(request: Request) {
       done: false,
       retryAfter: Math.ceil((stored.retryAt - Date.now()) / 1000),
     });
-  if (
-    (!stored || stored.done) &&
-    c.observedAt &&
-    Date.now() - Date.parse(c.observedAt) < 300000
-  )
-    return Response.json({ done: true });
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
   const job: Job =
     stored && !stored.done

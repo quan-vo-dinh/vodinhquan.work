@@ -13,7 +13,7 @@ type Connection = Omit<LiveConnection, "credential" | "inboxCredential"> & {
 };
 export function LiveConnections() {
   const { text } = useDeveloperLocale(),
-    { reload } = useDeveloper();
+    { reload, refresh, isValidating } = useDeveloper();
   const {
     data: connections = [],
     error,
@@ -139,7 +139,7 @@ export function LiveConnections() {
                       body: JSON.stringify({ id: c.id }),
                     });
                     setEditing(null);
-                    reload();
+                    refresh();
                   })
                 }
               >
@@ -260,7 +260,7 @@ export function LiveConnections() {
           <Button
             className="ml-2"
             variant="outline"
-            disabled={busy}
+            disabled={busy || isValidating}
             onClick={reload}
           >
             {text("Đồng bộ dữ liệu", "Sync data")}
