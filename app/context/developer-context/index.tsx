@@ -117,9 +117,6 @@ export function DeveloperProvider({
         },
       }}
     >
-      <p role="status" className="border-b bg-muted px-4 py-2 text-sm text-muted-foreground">
-        Tự đồng bộ GitHub đã tắt. Bấm nút đồng bộ để cập nhật thông tin.
-      </p>
       {children}
     </Context.Provider>
   );
