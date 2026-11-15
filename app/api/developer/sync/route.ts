@@ -1,3 +1,6 @@
-import { withOwner } from "@/lib/auth/api";
-import { syncRequest } from "@/lib/developer/live/service";
-export const POST = withOwner(syncRequest);
+export function POST() {
+  return Response.json({ code: "developer_sync_paused" }, {
+    status: 503,
+    headers: { "Cache-Control": "no-store" },
+  });
+}

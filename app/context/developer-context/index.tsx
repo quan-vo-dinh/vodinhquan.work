@@ -3,8 +3,6 @@ import {
   createContext,
   useContext,
   useState,
-  useEffect,
-  useCallback,
   type ReactNode,
 } from "react";
 import useSWR from "swr";
@@ -47,66 +45,11 @@ export function DeveloperProvider({
     {
       fallbackData: { data: initialData, activities: [], coverage: [] },
       revalidateOnFocus: false,
-      refreshInterval: 5000,
+      revalidateOnReconnect: false,
     },
   );
   const [githubAccount, setGithubAccount] = useState("all");
-  const [days, setDays] = useState(30),
-    [syncing, setSyncing] = useState(false);
-  const sync = useCallback(
-    async (signal?: AbortSignal) => {
-      await Promise.resolve();
-      if (signal?.aborted) return;
-      setSyncing(true);
-      try {
-        const connections = (await developerFetch(
-          "/api/developer/connections",
-          { signal },
-        )) as { id: string; paused: boolean }[];
-        const results = await Promise.allSettled(connections.filter(c => !c.paused).map(async c => {
-          let activityDone = false, historyDone = false;
-          for (let step = 0; step < 10000 && !signal?.aborted && (!activityDone || !historyDone); step++) {
-            if (!historyDone) {
-              const result = await developerFetch("/api/developer/sync", {
-                method: "POST", body: JSON.stringify({ id: c.id, mode: "history" }), signal,
-              });
-              historyDone = !!(result.done || result.retryAfter);
-            }
-            if (!activityDone) {
-              const result = await developerFetch("/api/developer/sync", {
-                method: "POST", body: JSON.stringify({ id: c.id }), signal,
-              });
-              activityDone = !!(result.done || result.retryAfter);
-            }
-          }
-        }));
-        const failed = results.find(r => r.status === "rejected");
-        if (failed?.status === "rejected") throw failed.reason;
-      } catch (cause) {
-        if (!signal?.aborted)
-          toast.add({
-            title: cause instanceof Error ? cause.message : "unavailable",
-            type: "error",
-          });
-      } finally {
-        setSyncing(false);
-        if (!signal?.aborted) await mutate();
-      }
-    },
-    [mutate],
-  );
-  useEffect(() => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => void sync(controller.signal), 0);
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [sync]);
-  useEffect(() => {
-    const timer = setInterval(() => { if (!syncing) void sync(); }, 60000);
-    return () => clearInterval(timer);
-  }, [sync, syncing]);
+  const [days, setDays] = useState(30);
   const current = data?.data ?? initialData;
   return (
     <Context.Provider
@@ -115,14 +58,12 @@ export function DeveloperProvider({
         activities: data?.activities ?? [],
         syncProgress: data?.sync ?? [],
         error,
-        isValidating: isValidating || syncing,
+        isValidating,
         days,
         setDays,
         githubAccount,
         setGithubAccount,
-        reload: () => {
-          if (!syncing) void sync();
-        },
+        reload: () => { void mutate(); },
         readIds: current.notifications.filter((n) => n.read).map((n) => n.id),
         toggleRead: (id) => {
           void developerFetch("/api/developer/inbox", {
@@ -130,12 +71,13 @@ export function DeveloperProvider({
             body: JSON.stringify({ id }),
           })
             .then(() => mutate())
-            .catch((cause) =>
-              toast.add({ title: String(cause.message), type: "error" }),
-            );
+            .catch((cause) => toast.add({ title: String(cause.message), type: "error" }));
         },
       }}
     >
+      <p role="status" className="border-b bg-muted px-4 py-2 text-sm text-muted-foreground">
+        Tự đồng bộ GitHub đã tạm ngừng. Thông tin hiển thị từ lần đồng bộ trước.
+      </p>
       {children}
     </Context.Provider>
   );
