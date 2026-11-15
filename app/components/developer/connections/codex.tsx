@@ -37,7 +37,10 @@ export function CodexConnections() {
   const { data, mutate, error } = useSWR<{
     accounts: Account[];
     devices: Device[];
-  }>("/api/developer/codex", developerFetch, { refreshInterval: 5000 });
+  }>("/api/developer/codex", developerFetch, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
   const [name, setName] = useState(""),
     [group, setGroup] = useState("personal"),
     [notice, setNotice] = useState(""),
